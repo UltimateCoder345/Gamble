@@ -1,514 +1,204 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>FakeGamble — Fun Only</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Gamble — by UltimateCoder345</title>
 <style>
-  :root{
-    --bg:#0f1724; --card:#0b1220; --accent:#16a34a; --muted:#94a3b8;
-    --danger:#ef4444; --glass: rgba(255,255,255,0.03);
-    --glass-2: rgba(255,255,255,0.02);
+  body {
+    margin:0; font-family:Arial, sans-serif; background:#0f172a; color:#f8fafc;
   }
-  html,body{height:100%; margin:0; font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
-  body{background:linear-gradient(180deg, #071428 0%, #081424 100%); color:#e6eef8; display:flex; align-items:flex-start; justify-content:center; padding:28px;}
-  .wrap{width:100%; max-width:1100px; display:grid; grid-template-columns: 320px 1fr; gap:20px;}
-  .card{background:linear-gradient(180deg,var(--card), #07101a); border-radius:12px; padding:16px; box-shadow: 0 6px 20px rgba(2,6,23,0.6); border:1px solid rgba(255,255,255,0.03);}
-  header.card{grid-column:1/-1; display:flex; align-items:center; gap:12px;}
-  .logo{width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,#0ea5a3,#7dd3fc);display:flex;align-items:center;justify-content:center;font-weight:700;color:#011;}
-  h1{font-size:18px;margin:0}
-  .left{display:flex;flex-direction:column;gap:12px}
-  .balance{font-size:28px;font-weight:700; color:var(--accent)}
-  .muted{color:var(--muted); font-size:13px}
-  .btn{background:var(--glass); border:1px solid rgba(255,255,255,0.03); padding:8px 12px;border-radius:8px;color:inherit; cursor:pointer; transition:transform .08s; font-weight:600}
-  .btn:active{transform:translateY(1px)}
-  .btn-green{background:linear-gradient(90deg,#064e3b,#065f46); color:#d1fae5; border:1px solid rgba(255,255,255,0.04)}
-  .btn-danger{background:linear-gradient(90deg,#7f1d1d,#b91c1c); color:#fff}
-  .controls{display:flex;gap:8px;flex-wrap:wrap}
-  input[type="number"]{width:120px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03); background:transparent;color:inherit}
-  .game-area{display:flex;flex-direction:column;gap:12px}
-  .game-row{display:flex;gap:12px;align-items:flex-start}
-  .panel{flex:1; padding:12px;border-radius:10px;background:var(--glass-2); min-height:160px}
-  .small{font-size:13px}
-  .hand{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-  .card-ui{background:#061022;padding:8px;border-radius:8px;min-width:52px;text-align:center;border:1px solid rgba(255,255,255,0.03)}
-  .log{height:120px; overflow:auto; background:rgba(5,10,20,0.6); padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.02); font-size:13px}
-  .hdr{display:flex;justify-content:space-between;align-items:center}
-  footer{grid-column:1/-1;color:var(--muted); font-size:12px; text-align:center; margin-top:8px}
-  .claim-row{display:flex;flex-direction:column;gap:8px}
-  .cooldown{font-size:13px;color:var(--muted)}
-  .flex-between{display:flex;justify-content:space-between;align-items:center}
-  .small-muted{font-size:12px;color:var(--muted)}
-  /* responsive */
-  @media (max-width:880px){ .wrap{grid-template-columns: 1fr; } header.card{flex-wrap:wrap} .left{order:2} }
+  header {
+    background:#1e293b; padding:12px 20px; display:flex; justify-content:space-between; align-items:center;
+  }
+  header h1 { margin:0; font-size:20px; color:#38bdf8 }
+  nav { display:flex; gap:12px }
+  nav button {
+    background:#334155; border:none; color:#f8fafc; padding:8px 14px; border-radius:6px; cursor:pointer;
+  }
+  nav button.active { background:#38bdf8; color:#0f172a; }
+  .balance {
+    font-weight:bold; font-size:18px; color:#22c55e;
+  }
+  main { padding:20px; }
+  section { display:none; }
+  section.active { display:block; }
+  .panel {
+    background:#1e293b; padding:16px; border-radius:8px; margin-bottom:16px;
+  }
+  input, button {
+    margin-top:8px;
+    padding:8px; border-radius:6px; border:1px solid #475569;
+    background:#0f172a; color:#f8fafc;
+  }
+  button.action {
+    background:#38bdf8; border:none; color:#0f172a; font-weight:bold; margin-top:12px;
+  }
+  .log { margin-top:12px; background:#0f172a; padding:10px; border-radius:6px; height:120px; overflow:auto; font-size:14px; }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <header class="card">
-      <div class="logo">FG</div>
-      <div style="flex:1">
-        <h1>FakeGamble — Play with Fake Coins</h1>
-        <div class="muted">Fake currency only. Saved locally in your browser. Do not use real money.</div>
-      </div>
-      <div style="text-align:right">
-        <div class="muted small-muted">Your Balance</div>
-        <div class="balance" id="balance">--</div>
-      </div>
-    </header>
-
-    <aside class="card left">
-      <div>
-        <div class="muted">Quick actions</div>
-        <div class="controls" style="margin-top:8px">
-          <button class="btn btn-green" id="add100">Add 100</button>
-          <button class="btn" id="resetBtn">Reset</button>
-        </div>
-      </div>
-
-      <div class="card" style="margin-top:6px; background:var(--glass)">
-        <div class="muted">Claims</div>
-        <div class="claim-row" style="margin-top:8px">
-          <div class="flex-between">
-            <div>
-              <div style="font-weight:700">Hourly Claim</div>
-              <div class="muted small">Free hourly coins</div>
-            </div>
-            <div style="text-align:right">
-              <div id="hourlyAmount" class="balance">--</div>
-              <button class="btn" id="claimHourly">Claim</button>
-            </div>
-          </div>
-          <div class="cooldown" id="hourlyCooldown">ready</div>
-
-          <hr style="border:none;height:8px;background:transparent" />
-
-          <div class="flex-between">
-            <div>
-              <div style="font-weight:700">Daily Claim</div>
-              <div class="muted small">Bigger once per 24 hours</div>
-            </div>
-            <div style="text-align:right">
-              <div id="dailyAmount" class="balance">--</div>
-              <button class="btn" id="claimDaily">Claim</button>
-            </div>
-          </div>
-          <div class="cooldown" id="dailyCooldown">ready</div>
-        </div>
-      </div>
-
-      <div class="card" style="margin-top:6px; background:var(--glass)">
-        <div class="muted">Quick bet</div>
-        <div style="margin-top:8px" class="controls">
-          <input type="number" id="quickBet" min="1" value="10" />
-          <button class="btn" id="betAll">Bet All</button>
-          <button class="btn" id="halfBet">Bet 50%</button>
-        </div>
-        <div class="muted small" style="margin-top:8px">You can use the bet input in each game panel too.</div>
-      </div>
-
-    </aside>
-
-    <main class="card game-area">
-      <div class="hdr">
-        <div style="font-weight:700">Games</div>
-        <div class="muted small">Balance saved locally. Refresh keeps balance.</div>
-      </div>
-
-      <!-- Coin Flip -->
-      <section class="panel">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <div style="font-weight:700">Coin Flip</div>
-            <div class="muted small">Pick heads or tails. 1:1 payout.</div>
-          </div>
-          <div class="controls">
-            <input type="number" id="coinBet" min="1" value="10" />
-            <button class="btn" data-side="heads" id="coinHeads">Heads</button>
-            <button class="btn" data-side="tails" id="coinTails">Tails</button>
-          </div>
-        </div>
-        <div class="log" id="coinLog"></div>
-      </section>
-
-      <!-- Blackjack -->
-      <section class="panel" style="display:block">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <div style="font-weight:700">Blackjack</div>
-            <div class="muted small">Classic: beat the dealer without busting (21).</div>
-          </div>
-          <div class="controls">
-            <input type="number" id="bjBet" min="1" value="50" />
-            <button class="btn" id="bjDeal">Deal</button>
-            <button class="btn" id="bjHit">Hit</button>
-            <button class="btn" id="bjStand">Stand</button>
-          </div>
-        </div>
-        <div style="display:flex;gap:12px;margin-top:12px" class="small">
-          <div class="panel" style="min-width:220px">
-            <div style="font-weight:700">Your Hand <span id="playerTotal" class="muted small"></span></div>
-            <div class="hand" id="playerHand"></div>
-          </div>
-          <div class="panel" style="min-width:220px">
-            <div style="font-weight:700">Dealer <span id="dealerTotal" class="muted small"></span></div>
-            <div class="hand" id="dealerHand"></div>
-          </div>
-        </div>
-        <div class="log" id="bjLog"></div>
-      </section>
-
-      <!-- Dice Blackjack -->
-      <section class="panel">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <div style="font-weight:700">Dice Blackjack</div>
-            <div class="muted small">Roll dice (1–6). Try to reach as close to 21 without busting. Hold to compare with dealer.</div>
-          </div>
-          <div class="controls">
-            <input type="number" id="diceBet" min="1" value="25" />
-            <button class="btn" id="diceRoll">Roll</button>
-            <button class="btn" id="diceHold">Hold</button>
-          </div>
-        </div>
-        <div style="display:flex;gap:12px;margin-top:12px" class="small">
-          <div class="panel" style="min-width:220px">
-            <div style="font-weight:700">Your Rolls <span id="diceTotal" class="muted small"></span></div>
-            <div class="hand" id="diceHand"></div>
-          </div>
-          <div class="panel" style="min-width:220px">
-            <div style="font-weight:700">Dealer Rolls <span id="diceDealerTotal" class="muted small"></span></div>
-            <div class="hand" id="diceDealerHand"></div>
-          </div>
-        </div>
-        <div class="log" id="diceLog"></div>
-      </section>
-
-      <footer>
-        To publish on GitHub Pages: create a repo, add this `index.html`, push to `main` (or `gh-pages`) branch, then enable Pages in repo Settings. Site will be served at `https://<your-username>.github.io/<repo>/`.
-      </footer>
-    </main>
-  </div>
+<header>
+  <h1>🎲 Gamble</h1>
+  <div class="balance">Balance: <span id="balance">0</span> 💰</div>
+</header>
+<nav>
+  <button onclick="showTab('home')" class="active">Home</button>
+  <button onclick="showTab('coinflip')">Coinflip</button>
+  <button onclick="showTab('blackjack')">Blackjack</button>
+  <button onclick="showTab('dice')">Dice</button>
+  <button onclick="showTab('daily')">Daily</button>
+</nav>
+<main>
+  <section id="home" class="active">
+    <div class="panel">
+      <h2>Welcome to Gamble!</h2>
+      <p>Fake casino site by <b>UltimateCoder345</b>. Use your fake coins to play coinflip, blackjack, or dice. Claim daily rewards too!</p>
+    </div>
+  </section>
+  <section id="coinflip">
+    <div class="panel">
+      <h2>Coinflip</h2>
+      <p>Pick Heads or Tails and place your bet.</p>
+      <input type="number" id="cf-bet" placeholder="Bet amount"/>
+      <select id="cf-choice">
+        <option value="heads">Heads</option>
+        <option value="tails">Tails</option>
+      </select><br>
+      <button class="action" onclick="playCoinflip()">Flip</button>
+      <div class="log" id="cf-log"></div>
+    </div>
+  </section>
+  <section id="blackjack">
+    <div class="panel">
+      <h2>Blackjack (Simple)</h2>
+      <input type="number" id="bj-bet" placeholder="Bet amount"/><br>
+      <button class="action" onclick="startBlackjack()">Start Game</button>
+      <div class="log" id="bj-log"></div>
+    </div>
+  </section>
+  <section id="dice">
+    <div class="panel">
+      <h2>Dice Roll</h2>
+      <p>Roll a number 1-6. If you hit 6, you win 5x!</p>
+      <input type="number" id="dice-bet" placeholder="Bet amount"/><br>
+      <button class="action" onclick="playDice()">Roll Dice</button>
+      <div class="log" id="dice-log"></div>
+    </div>
+  </section>
+  <section id="daily">
+    <div class="panel">
+      <h2>Daily & Hourly Rewards</h2>
+      <button class="action" onclick="claimReward('hourly')">Claim Hourly (+100)</button><br>
+      <button class="action" onclick="claimReward('daily')">Claim Daily (+1000)</button>
+      <div class="log" id="reward-log"></div>
+    </div>
+  </section>
+</main>
 
 <script>
-(() => {
-  // storage keys
-  const KEY_BAL = 'fg_balance';
-  const KEY_HOUR = 'fg_last_hour';
-  const KEY_DAY = 'fg_last_day';
+let balance = 0;
+let rewards = { hourly:0, daily:0 };
 
-  // DOM refs
-  const balanceEl = document.getElementById('balance');
-  const hourlyCooldown = document.getElementById('hourlyCooldown');
-  const dailyCooldown = document.getElementById('dailyCooldown');
-  const hourlyAmountEl = document.getElementById('hourlyAmount');
-  const dailyAmountEl = document.getElementById('dailyAmount');
+function loadData(){
+  balance = parseInt(localStorage.getItem("balance"))||1000;
+  rewards = JSON.parse(localStorage.getItem("rewards"))||{hourly:0,daily:0};
+  updateBalance();
+}
+function saveData(){
+  localStorage.setItem("balance", balance);
+  localStorage.setItem("rewards", JSON.stringify(rewards));
+}
+function updateBalance(){
+  document.getElementById("balance").textContent = balance;
+  saveData();
+}
+function showTab(id){
+  document.querySelectorAll("nav button").forEach(btn=>btn.classList.remove("active"));
+  document.querySelectorAll("section").forEach(sec=>sec.classList.remove("active"));
+  document.querySelector(`button[onclick="showTab('${id}')"]`).classList.add("active");
+  document.getElementById(id).classList.add("active");
+}
 
-  // logs & inputs
-  const coinLog = document.getElementById('coinLog');
-  const bjLog = document.getElementById('bjLog');
-  const diceLog = document.getElementById('diceLog');
-
-  // bets
-  const quickBet = document.getElementById('quickBet');
-  const coinBet = document.getElementById('coinBet');
-  const bjBet = document.getElementById('bjBet');
-  const diceBet = document.getElementById('diceBet');
-
-  // balance helpers
-  function loadBalance(){ return Number(localStorage.getItem(KEY_BAL) || 1000); } // start with 1000
-  function saveBalance(v){ localStorage.setItem(KEY_BAL, String(v)); renderBalance(); }
-  function renderBalance(){ balanceEl.textContent = formatCoins(loadBalance()); }
-  function formatCoins(n){ return Math.floor(n).toLocaleString() + ' ⨀'; }
-
-  // initialize amounts (randomized but displayed)
-  function getHourlyAmount(){ // randomized between 50-200
-    return Math.floor(50 + Math.random()*150);
+// Coinflip
+function playCoinflip(){
+  let bet = parseInt(document.getElementById("cf-bet").value);
+  let choice = document.getElementById("cf-choice").value;
+  let log = document.getElementById("cf-log");
+  if(isNaN(bet)||bet<=0){ log.innerHTML+="<div>Invalid bet.</div>"; return; }
+  if(bet>balance){ log.innerHTML+="<div>Not enough balance.</div>"; return; }
+  balance-=bet; updateBalance();
+  let result = Math.random()<0.5?"heads":"tails";
+  if(result===choice){
+    let win = bet*2;
+    balance+=win; updateBalance();
+    log.innerHTML+=`<div>You won! It was ${result}. +${win}</div>`;
+  } else {
+    log.innerHTML+=`<div>You lost! It was ${result}. -${bet}</div>`;
   }
-  function getDailyAmount(){ // randomized between 400-1500
-    return Math.floor(400 + Math.random()*1100);
+  log.scrollTop=log.scrollHeight;
+}
+
+// Dice
+function playDice(){
+  let bet = parseInt(document.getElementById("dice-bet").value);
+  let log = document.getElementById("dice-log");
+  if(isNaN(bet)||bet<=0){ log.innerHTML+="<div>Invalid bet.</div>"; return; }
+  if(bet>balance){ log.innerHTML+="<div>Not enough balance.</div>"; return; }
+  balance-=bet; updateBalance();
+  let roll = Math.floor(Math.random()*6)+1;
+  if(roll===6){
+    let win=bet*5;
+    balance+=win; updateBalance();
+    log.innerHTML+=`<div>You rolled a 6! +${win}</div>`;
+  } else {
+    log.innerHTML+=`<div>You rolled ${roll}. Lost -${bet}</div>`;
   }
-  hourlyAmountEl.textContent = formatCoins(getHourlyAmount());
-  dailyAmountEl.textContent = formatCoins(getDailyAmount());
+  log.scrollTop=log.scrollHeight;
+}
 
-  // cooldowns
-  function secondsUntil(ms) { return Math.max(0, Math.floor((ms - Date.now())/1000)); }
-  function updateCooldownDisplays(){
-    const lastHour = Number(localStorage.getItem(KEY_HOUR) || 0);
-    const lastDay = Number(localStorage.getItem(KEY_DAY) || 0);
-    const nextHour = lastHour + 60*60*1000;
-    const nextDay = lastDay + 24*60*60*1000;
-    const sHour = secondsUntil(nextHour);
-    const sDay = secondsUntil(nextDay);
-    hourlyCooldown.textContent = sHour>0 ? `Ready in ${formatSeconds(sHour)}` : 'Ready';
-    dailyCooldown.textContent = sDay>0 ? `Ready in ${formatSeconds(sDay)}` : 'Ready';
+// Blackjack (very simple)
+function startBlackjack(){
+  let bet = parseInt(document.getElementById("bj-bet").value);
+  let log = document.getElementById("bj-log");
+  if(isNaN(bet)||bet<=0){ log.innerHTML+="<div>Invalid bet.</div>"; return; }
+  if(bet>balance){ log.innerHTML+="<div>Not enough balance.</div>"; return; }
+  balance-=bet; updateBalance();
+  let player = Math.floor(Math.random()*11)+15;
+  let dealer = Math.floor(Math.random()*6)+16;
+  let result="";
+  if(player>21){ result=`Bust! Lost -${bet}`; }
+  else if(dealer>21 || player>dealer){ 
+    let win=bet*2; balance+=win; updateBalance();
+    result=`You win! Player:${player} Dealer:${dealer} +${win}`;
+  } else if(player===dealer){ 
+    balance+=bet; updateBalance();
+    result=`Push. Player:${player} Dealer:${dealer} (no loss)`;
+  } else {
+    result=`You lost. Player:${player} Dealer:${dealer} -${bet}`;
   }
-  function formatSeconds(s){
-    if(s < 60) return `${s}s`;
-    const m = Math.floor(s/60); const sec = s%60;
-    if(m < 60) return `${m}m ${sec}s`;
-    const h = Math.floor(m/60); const mm = m%60;
-    return `${h}h ${mm}m`;
+  log.innerHTML+=`<div>${result}</div>`;
+  log.scrollTop=log.scrollHeight;
+}
+
+// Rewards
+function claimReward(type){
+  let log=document.getElementById("reward-log");
+  let now=Date.now();
+  if(type==="hourly"){
+    if(now-rewards.hourly<3600000){ log.innerHTML+="<div>Hourly already claimed!</div>"; return; }
+    balance+=100; updateBalance(); rewards.hourly=now; saveData();
+    log.innerHTML+="<div>Claimed +100 hourly!</div>";
   }
-  setInterval(updateCooldownDisplays, 1000);
-  updateCooldownDisplays();
-
-  // Claim handlers
-  document.getElementById('claimHourly').addEventListener('click', () => {
-    const last = Number(localStorage.getItem(KEY_HOUR) || 0);
-    if(Date.now() - last < 60*60*1000){ alert('Hourly claim not ready yet.'); return; }
-    const amt = getHourlyAmount();
-    saveBalance(loadBalance() + amt);
-    localStorage.setItem(KEY_HOUR, String(Date.now()));
-    hourlyAmountEl.textContent = formatCoins(getHourlyAmount());
-    appendLog(coinLog, `Claimed hourly ${formatCoins(amt)}.`);
-    updateCooldownDisplays();
-  });
-
-  document.getElementById('claimDaily').addEventListener('click', () => {
-    const last = Number(localStorage.getItem(KEY_DAY) || 0);
-    if(Date.now() - last < 24*60*60*1000){ alert('Daily claim not ready yet.'); return; }
-    const amt = getDailyAmount();
-    saveBalance(loadBalance() + amt);
-    localStorage.setItem(KEY_DAY, String(Date.now()));
-    dailyAmountEl.textContent = formatCoins(getDailyAmount());
-    appendLog(coinLog, `Claimed daily ${formatCoins(amt)}.`);
-    updateCooldownDisplays();
-  });
-
-  // quick buttons
-  document.getElementById('add100').addEventListener('click', () => {
-    saveBalance(loadBalance()+100);
-    appendLog(coinLog, 'Added 100 coins.');
-  });
-  document.getElementById('resetBtn').addEventListener('click', () => {
-    if(confirm('Reset balance and claims?')) {
-      localStorage.removeItem(KEY_BAL);
-      localStorage.removeItem(KEY_HOUR);
-      localStorage.removeItem(KEY_DAY);
-      renderBalance();
-      appendLog(coinLog, 'Reset local data.');
-      hourlyAmountEl.textContent = formatCoins(getHourlyAmount());
-      dailyAmountEl.textContent = formatCoins(getDailyAmount());
-    }
-  });
-  document.getElementById('betAll').addEventListener('click', ()=>{
-    quickBet.value = Math.max(1, Math.floor(loadBalance()));
-  });
-  document.getElementById('halfBet').addEventListener('click', ()=>{
-    quickBet.value = Math.max(1, Math.floor(loadBalance()/2));
-  });
-
-  // logging
-  function appendLog(el, text){
-    const time = (new Date()).toLocaleTimeString();
-    el.innerHTML = `<div style="margin-bottom:6px"><strong>[${time}]</strong> ${escapeHtml(text)}</div>` + el.innerHTML;
+  if(type==="daily"){
+    if(now-rewards.daily<86400000){ log.innerHTML+="<div>Daily already claimed!</div>"; return; }
+    balance+=1000; updateBalance(); rewards.daily=now; saveData();
+    log.innerHTML+="<div>Claimed +1000 daily!</div>";
   }
-  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, (m)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[m]) }
+  log.scrollTop=log.scrollHeight;
+}
 
-  // Coin flip
-  document.getElementById('coinHeads').addEventListener('click', ()=>playCoin('heads'));
-  document.getElementById('coinTails').addEventListener('click', ()=>playCoin('tails'));
-  function playCoin(chosen){
-    const bet = Math.max(1, Math.floor(Number(coinBet.value) || 0));
-    if(bet > loadBalance()){ alert('Not enough balance'); return; }
-    const result = Math.random() < 0.5 ? 'heads' : 'tails';
-    if(result === chosen){
-      saveBalance(loadBalance() + bet);
-      appendLog(coinLog, `Coin flip WIN (${result}) +${formatCoins(bet)}.`);
-    } else {
-      saveBalance(loadBalance() - bet);
-      appendLog(coinLog, `Coin flip LOSE (${result}) -${formatCoins(bet)}.`);
-    }
-  }
-
-  // Blackjack Implementation
-  const playerHandEl = document.getElementById('playerHand');
-  const dealerHandEl = document.getElementById('dealerHand');
-  const playerTotalEl = document.getElementById('playerTotal');
-  const dealerTotalEl = document.getElementById('dealerTotal');
-
-  let bjDeck = [];
-  let bjPlayer = [];
-  let bjDealer = [];
-  let bjInRound = false;
-  let currentBet = 0;
-
-  function createDeck(){
-    const suits = ['♠','♥','♦','♣'];
-    const ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
-    const deck=[];
-    for(const s of suits) for(const r of ranks) deck.push({r, s});
-    // shuffle
-    for(let i=deck.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [deck[i],deck[j]]=[deck[j],deck[i]]; }
-    return deck;
-  }
-  function cardValue(card){
-    if(!card) return 0;
-    const r = card.r;
-    if(r==='A') return 11; // handle aces later
-    if(['J','Q','K'].includes(r)) return 10;
-    return Number(r);
-  }
-  function handTotal(hand){
-    let total = 0; let aces = 0;
-    for(const c of hand){ const v=cardValue(c); total+=v; if(c.r==='A') aces++; }
-    while(total>21 && aces>0){ total -= 10; aces--; }
-    return total;
-  }
-  function renderBJ(){
-    playerHandEl.innerHTML = bjPlayer.map(c=>`<div class="card-ui">${c.r}${c.s}</div>`).join('');
-    dealerHandEl.innerHTML = bjDealer.map((c, i)=>`<div class="card-ui">${i===0 && bjInRound ? c.r + c.s : c.r + c.s}</div>`).join('');
-    playerTotalEl.textContent = handTotal(bjPlayer) ? `(${handTotal(bjPlayer)})` : '';
-    dealerTotalEl.textContent = bjInRound ? '(?)' : `(${handTotal(bjDealer)})`;
-  }
-
-  function endRoundBJ(reason){
-    bjInRound = false;
-    // settle bet based on winner logic
-    const p = handTotal(bjPlayer);
-    const d = handTotal(bjDealer);
-    let msg='';
-    if(p>21){ saveBalance(loadBalance() - currentBet); msg = `Busted! You lose ${formatCoins(currentBet)}.`; }
-    else if(d>21){ saveBalance(loadBalance() + currentBet); msg = `Dealer busted! You win ${formatCoins(currentBet)}.`; }
-    else if(p> d){ saveBalance(loadBalance() + currentBet); msg = `You win ${formatCoins(currentBet)} ( ${p} vs ${d} ).`; }
-    else if(p === d){ msg = `Push. Bet returned.`; } // no change
-    else { saveBalance(loadBalance() - currentBet); msg = `You lose ${formatCoins(currentBet)} ( ${p} vs ${d} ).`; }
-    appendLog(bjLog, msg + ' ' + reason);
-    currentBet = 0;
-    renderBalance();
-    renderBJ();
-  }
-
-  document.getElementById('bjDeal').addEventListener('click', ()=>{
-    if(bjInRound){ alert('Round in progress.'); return; }
-    const bet = Math.max(1, Math.floor(Number(bjBet.value) || 0));
-    if(bet > loadBalance()){ alert('Not enough balance'); return; }
-    bjDeck = createDeck();
-    bjPlayer = [bjDeck.pop(), bjDeck.pop()];
-    bjDealer = [bjDeck.pop(), bjDeck.pop()];
-    bjInRound = true;
-    currentBet = bet;
-    appendLog(bjLog, `Dealt. Bet ${formatCoins(bet)}.`);
-    renderBJ();
-    if(handTotal(bjPlayer) === 21){ // blackjack immediate
-      // dealer reveal
-      while(handTotal(bjDealer) < 17) bjDealer.push(bjDeck.pop());
-      endRoundBJ('Blackjack check.');
-    }
-  });
-
-  document.getElementById('bjHit').addEventListener('click', ()=>{
-    if(!bjInRound){ alert('Not in a round.'); return; }
-    bjPlayer.push(bjDeck.pop());
-    renderBJ();
-    if(handTotal(bjPlayer) > 21) {
-      // immediate bust
-      while(handTotal(bjDealer) < 17) bjDealer.push(bjDeck.pop());
-      endRoundBJ('You busted.');
-    }
-  });
-
-  document.getElementById('bjStand').addEventListener('click', ()=>{
-    if(!bjInRound){ alert('Not in a round.'); return; }
-    while(handTotal(bjDealer) < 17) bjDealer.push(bjDeck.pop());
-    renderBJ();
-    endRoundBJ('Round ended.');
-  });
-
-  // Dice Blackjack
-  const diceHandEl = document.getElementById('diceHand');
-  const diceDealerHandEl = document.getElementById('diceDealerHand');
-  const diceTotalEl = document.getElementById('diceTotal');
-  const diceDealerTotalEl = document.getElementById('diceDealerTotal');
-
-  let dicePlayer = [];
-  let diceDealer = [];
-  let diceActive = false;
-  let diceCurrentBet = 0;
-
-  function renderDice(){
-    diceHandEl.innerHTML = dicePlayer.map(n=>`<div class="card-ui">${n}</div>`).join('');
-    diceDealerHandEl.innerHTML = diceDealer.map(n=>`<div class="card-ui">${n}</div>`).join('');
-    diceTotalEl.textContent = dicePlayer.length ? `(${dicePlayer.reduce((a,b)=>a+b,0)})` : '';
-    diceDealerTotalEl.textContent = diceDealer.length ? `(${diceDealer.reduce((a,b)=>a+b,0)})` : '';
-  }
-
-  document.getElementById('diceRoll').addEventListener('click', ()=>{
-    if(!diceActive){
-      const bet = Math.max(1, Math.floor(Number(diceBet.value) || 0));
-      if(bet > loadBalance()){ alert('Not enough balance'); return; }
-      diceCurrentBet = bet;
-      dicePlayer = [];
-      diceDealer = [];
-      diceActive = true;
-      appendLog(diceLog, `Started dice round. Bet ${formatCoins(bet)}.`);
-    }
-    // roll
-    const roll = 1 + Math.floor(Math.random()*6);
-    dicePlayer.push(roll);
-    appendLog(diceLog, `You rolled ${roll}.`);
-    renderDice();
-    const total = dicePlayer.reduce((a,b)=>a+b,0);
-    if(total > 21){
-      // immediate end - dealer auto-rolls to attempt to beat but doesn't matter
-      appendLog(diceLog, `You busted with ${total}.`);
-      // settle
-      saveBalance(loadBalance() - diceCurrentBet);
-      diceActive = false;
-      renderBalance();
-    }
-  });
-
-  document.getElementById('diceHold').addEventListener('click', ()=>{
-    if(!diceActive){ alert('No active dice round.'); return; }
-    // Dealer rolls until 17 or higher
-    let dtotal = 0;
-    while(dtotal < 17){
-      const r = 1 + Math.floor(Math.random()*6);
-      diceDealer.push(r);
-      dtotal = diceDealer.reduce((a,b)=>a+b,0);
-    }
-    renderDice();
-    const pTotal = dicePlayer.reduce((a,b)=>a+b,0);
-    const dealerTotal = diceDealer.reduce((a,b)=>a+b,0);
-    let msg='';
-    if(pTotal > 21) {
-      saveBalance(loadBalance() - diceCurrentBet); msg = `You busted. Lost ${formatCoins(diceCurrentBet)}.`;
-    } else if(dealerTotal > 21 || pTotal > dealerTotal){
-      saveBalance(loadBalance() + diceCurrentBet); msg = `You win! +${formatCoins(diceCurrentBet)} (you ${pTotal} vs dealer ${dealerTotal}).`;
-    } else if(pTotal === dealerTotal){
-      msg = `Push (tie).`;
-    } else {
-      saveBalance(loadBalance() - diceCurrentBet); msg = `Dealer wins. -${formatCoins(diceCurrentBet)} (you ${pTotal} vs dealer ${dealerTotal}).`;
-    }
-    appendLog(diceLog, msg);
-    diceActive = false;
-    renderBalance();
-  });
-
-  // init
-  if(!localStorage.getItem(KEY_BAL)) localStorage.setItem(KEY_BAL, '1000');
-  renderBalance();
-
-  // set bet input defaults to quick bet if empty
-  // tie quick input change to other inputs
-  quickBet.addEventListener('change', ()=>{
-    const v = Number(quickBet.value) || 0;
-    coinBet.value = v;
-    bjBet.value = v;
-    diceBet.value = v;
-  });
-
-  // Start with quickBet value propagation
-  quickBet.dispatchEvent(new Event('change'));
-
-  // small helper to prevent negative numbers etc
-  [coinBet, bjBet, diceBet, quickBet].forEach(inp=>{
-    inp.addEventListener('input', ()=>{ if(Number(inp.value) < 1) inp.value = 1; });
-  });
-
-})();
+loadData();
 </script>
 </body>
 </html>
