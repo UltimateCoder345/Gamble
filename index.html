@@ -12,7 +12,7 @@
     background:#1e293b; padding:12px 20px; display:flex; justify-content:space-between; align-items:center;
   }
   header h1 { margin:0; font-size:20px; color:#38bdf8 }
-  nav { display:flex; gap:12px }
+  nav { display:flex; gap:12px; flex-wrap:wrap; padding:10px; background:#1e293b }
   nav button {
     background:#334155; border:none; color:#f8fafc; padding:8px 14px; border-radius:6px; cursor:pointer;
   }
@@ -35,6 +35,9 @@
     background:#38bdf8; border:none; color:#0f172a; font-weight:bold; margin-top:12px;
   }
   .log { margin-top:12px; background:#0f172a; padding:10px; border-radius:6px; height:120px; overflow:auto; font-size:14px; }
+  table { width:100%; border-collapse:collapse; margin-top:10px; }
+  th, td { border-bottom:1px solid #334155; padding:8px; text-align:left; }
+  th { color:#38bdf8 }
 </style>
 </head>
 <body>
@@ -48,6 +51,7 @@
   <button onclick="showTab('blackjack')">Blackjack</button>
   <button onclick="showTab('dice')">Dice</button>
   <button onclick="showTab('daily')">Daily</button>
+  <button onclick="showTab('leaderboard')">Leaderboard</button>
 </nav>
 <main>
   <section id="home" class="active">
@@ -59,7 +63,6 @@
   <section id="coinflip">
     <div class="panel">
       <h2>Coinflip</h2>
-      <p>Pick Heads or Tails and place your bet.</p>
       <input type="number" id="cf-bet" placeholder="Bet amount"/>
       <select id="cf-choice">
         <option value="heads">Heads</option>
@@ -94,23 +97,38 @@
       <div class="log" id="reward-log"></div>
     </div>
   </section>
+  <section id="leaderboard">
+    <div class="panel">
+      <h2>Leaderboard</h2>
+      <table>
+        <thead><tr><th>Rank</th><th>User</th><th>Balance</th></tr></thead>
+        <tbody id="leaderboard-body"></tbody>
+      </table>
+    </div>
+  </section>
 </main>
 
 <script>
 let balance = 0;
 let rewards = { hourly:0, daily:0 };
+let username = "UltimateCoder345"; // locked name
+let leaderboard = [];
 
 function loadData(){
   balance = parseInt(localStorage.getItem("balance"))||1000;
   rewards = JSON.parse(localStorage.getItem("rewards"))||{hourly:0,daily:0};
+  leaderboard = JSON.parse(localStorage.getItem("leaderboard"))||[];
   updateBalance();
+  updateLeaderboard();
 }
 function saveData(){
   localStorage.setItem("balance", balance);
   localStorage.setItem("rewards", JSON.stringify(rewards));
+  localStorage.setItem("leaderboard", JSON.stringify(leaderboard));
 }
 function updateBalance(){
   document.getElementById("balance").textContent = balance;
+  saveLeaderboard();
   saveData();
 }
 function showTab(id){
@@ -120,7 +138,7 @@ function showTab(id){
   document.getElementById(id).classList.add("active");
 }
 
-// Coinflip
+// ------------------- Games -------------------
 function playCoinflip(){
   let bet = parseInt(document.getElementById("cf-bet").value);
   let choice = document.getElementById("cf-choice").value;
@@ -139,7 +157,6 @@ function playCoinflip(){
   log.scrollTop=log.scrollHeight;
 }
 
-// Dice
 function playDice(){
   let bet = parseInt(document.getElementById("dice-bet").value);
   let log = document.getElementById("dice-log");
@@ -157,7 +174,6 @@ function playDice(){
   log.scrollTop=log.scrollHeight;
 }
 
-// Blackjack (very simple)
 function startBlackjack(){
   let bet = parseInt(document.getElementById("bj-bet").value);
   let log = document.getElementById("bj-log");
@@ -181,7 +197,7 @@ function startBlackjack(){
   log.scrollTop=log.scrollHeight;
 }
 
-// Rewards
+// ------------------- Rewards -------------------
 function claimReward(type){
   let log=document.getElementById("reward-log");
   let now=Date.now();
@@ -196,6 +212,26 @@ function claimReward(type){
     log.innerHTML+="<div>Claimed +1000 daily!</div>";
   }
   log.scrollTop=log.scrollHeight;
+}
+
+// ------------------- Leaderboard -------------------
+function saveLeaderboard(){
+  // update or add player
+  let found = leaderboard.find(p=>p.user===username);
+  if(found){ found.balance=balance; }
+  else{ leaderboard.push({user:username,balance:balance}); }
+  leaderboard.sort((a,b)=>b.balance-a.balance);
+  leaderboard=leaderboard.slice(0,10); // keep top 10
+  localStorage.setItem("leaderboard", JSON.stringify(leaderboard));
+  updateLeaderboard();
+}
+function updateLeaderboard(){
+  let tbody=document.getElementById("leaderboard-body");
+  tbody.innerHTML="";
+  leaderboard.sort((a,b)=>b.balance-a.balance);
+  leaderboard.forEach((p,i)=>{
+    tbody.innerHTML+=`<tr><td>${i+1}</td><td>${p.user}</td><td>${p.balance}</td></tr>`;
+  });
 }
 
 loadData();
