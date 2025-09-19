@@ -5,36 +5,20 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Gamble — by UltimateCoder345</title>
 <style>
-  body {
-    margin:0; font-family:Arial, sans-serif; background:#0f172a; color:#f8fafc;
-  }
-  header {
-    background:#1e293b; padding:12px 20px; display:flex; justify-content:space-between; align-items:center;
-  }
+  body { margin:0; font-family:Arial, sans-serif; background:#0f172a; color:#f8fafc; }
+  header { background:#1e293b; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; }
   header h1 { margin:0; font-size:20px; color:#38bdf8 }
   nav { display:flex; gap:12px; flex-wrap:wrap; padding:10px; background:#1e293b }
-  nav button {
-    background:#334155; border:none; color:#f8fafc; padding:8px 14px; border-radius:6px; cursor:pointer;
-  }
+  nav button { background:#334155; border:none; color:#f8fafc; padding:8px 14px; border-radius:6px; cursor:pointer; }
   nav button.active { background:#38bdf8; color:#0f172a; }
-  .balance {
-    font-weight:bold; font-size:18px; color:#22c55e;
-  }
+  .balance { font-weight:bold; font-size:18px; color:#22c55e; }
   main { padding:20px; }
   section { display:none; }
   section.active { display:block; }
-  .panel {
-    background:#1e293b; padding:16px; border-radius:8px; margin-bottom:16px;
-  }
-  input, button {
-    margin-top:8px;
-    padding:8px; border-radius:6px; border:1px solid #475569;
-    background:#0f172a; color:#f8fafc;
-  }
-  button.action {
-    background:#38bdf8; border:none; color:#0f172a; font-weight:bold; margin-top:12px;
-  }
-  .log { margin-top:12px; background:#0f172a; padding:10px; border-radius:6px; height:120px; overflow:auto; font-size:14px; }
+  .panel { background:#1e293b; padding:16px; border-radius:8px; margin-bottom:16px; }
+  input, button, select { margin-top:8px; padding:8px; border-radius:6px; border:1px solid #475569; background:#0f172a; color:#f8fafc; }
+  button.action { background:#38bdf8; border:none; color:#0f172a; font-weight:bold; margin-top:12px; }
+  .log { margin-top:12px; background:#0f172a; padding:10px; border-radius:6px; height:140px; overflow:auto; font-size:14px; }
   table { width:100%; border-collapse:collapse; margin-top:10px; }
   th, td { border-bottom:1px solid #334155; padding:8px; text-align:left; }
   th { color:#38bdf8 }
@@ -43,7 +27,7 @@
 <body>
 <header>
   <h1>🎲 Gamble</h1>
-  <div class="balance">Balance: <span id="balance">0</span> 💰</div>
+  <div class="balance">Balance: <span id="balance">0</span> 💰 (<span id="user"></span>)</div>
 </header>
 <nav>
   <button onclick="showTab('home')" class="active">Home</button>
@@ -57,7 +41,7 @@
   <section id="home" class="active">
     <div class="panel">
       <h2>Welcome to Gamble!</h2>
-      <p>Fake casino site by <b>UltimateCoder345</b>. Use your fake coins to play coinflip, blackjack, or dice. Claim daily rewards too!</p>
+      <p>Fake casino site by <b>UltimateCoder345</b>. Play games, claim rewards, and climb the leaderboard!</p>
     </div>
   </section>
   <section id="coinflip">
@@ -74,17 +58,23 @@
   </section>
   <section id="blackjack">
     <div class="panel">
-      <h2>Blackjack (Simple)</h2>
+      <h2>Blackjack</h2>
       <input type="number" id="bj-bet" placeholder="Bet amount"/><br>
       <button class="action" onclick="startBlackjack()">Start Game</button>
+      <button class="action" onclick="hit()" id="hit-btn" style="display:none;">Hit</button>
+      <button class="action" onclick="stand()" id="stand-btn" style="display:none;">Stand</button>
       <div class="log" id="bj-log"></div>
     </div>
   </section>
   <section id="dice">
     <div class="panel">
       <h2>Dice Roll</h2>
-      <p>Roll a number 1-6. If you hit 6, you win 5x!</p>
-      <input type="number" id="dice-bet" placeholder="Bet amount"/><br>
+      <p>Pick a number 1–6. If you hit it, you win 5x!</p>
+      <input type="number" id="dice-bet" placeholder="Bet amount"/>
+      <select id="dice-choice">
+        <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+        <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+      </select><br>
       <button class="action" onclick="playDice()">Roll Dice</button>
       <div class="log" id="dice-log"></div>
     </div>
@@ -111,19 +101,30 @@
 <script>
 let balance = 0;
 let rewards = { hourly:0, daily:0 };
-let username = "UltimateCoder345"; // locked name
 let leaderboard = [];
+let username = "";
+let bjGame = null;
 
+// ---------- Init ----------
+function askName(){
+  username = localStorage.getItem("username");
+  if(!username){
+    username = prompt("Enter a display name:");
+    if(!username) username="Guest"+Math.floor(Math.random()*1000);
+    localStorage.setItem("username", username);
+  }
+  document.getElementById("user").textContent = username;
+}
 function loadData(){
-  balance = parseInt(localStorage.getItem("balance"))||1000;
-  rewards = JSON.parse(localStorage.getItem("rewards"))||{hourly:0,daily:0};
+  balance = parseInt(localStorage.getItem("balance_"+username))||1000;
+  rewards = JSON.parse(localStorage.getItem("rewards_"+username))||{hourly:0,daily:0};
   leaderboard = JSON.parse(localStorage.getItem("leaderboard"))||[];
   updateBalance();
   updateLeaderboard();
 }
 function saveData(){
-  localStorage.setItem("balance", balance);
-  localStorage.setItem("rewards", JSON.stringify(rewards));
+  localStorage.setItem("balance_"+username, balance);
+  localStorage.setItem("rewards_"+username, JSON.stringify(rewards));
   localStorage.setItem("leaderboard", JSON.stringify(leaderboard));
 }
 function updateBalance(){
@@ -138,7 +139,7 @@ function showTab(id){
   document.getElementById(id).classList.add("active");
 }
 
-// ------------------- Games -------------------
+// ---------- Coinflip ----------
 function playCoinflip(){
   let bet = parseInt(document.getElementById("cf-bet").value);
   let choice = document.getElementById("cf-choice").value;
@@ -157,47 +158,78 @@ function playCoinflip(){
   log.scrollTop=log.scrollHeight;
 }
 
+// ---------- Dice ----------
 function playDice(){
   let bet = parseInt(document.getElementById("dice-bet").value);
+  let choice = parseInt(document.getElementById("dice-choice").value);
   let log = document.getElementById("dice-log");
   if(isNaN(bet)||bet<=0){ log.innerHTML+="<div>Invalid bet.</div>"; return; }
   if(bet>balance){ log.innerHTML+="<div>Not enough balance.</div>"; return; }
   balance-=bet; updateBalance();
   let roll = Math.floor(Math.random()*6)+1;
-  if(roll===6){
+  if(roll===choice){
     let win=bet*5;
     balance+=win; updateBalance();
-    log.innerHTML+=`<div>You rolled a 6! +${win}</div>`;
+    log.innerHTML+=`<div>You rolled ${roll}, matched your choice! +${win}</div>`;
   } else {
-    log.innerHTML+=`<div>You rolled ${roll}. Lost -${bet}</div>`;
+    log.innerHTML+=`<div>You rolled ${roll}, lost -${bet}</div>`;
   }
   log.scrollTop=log.scrollHeight;
 }
 
+// ---------- Blackjack ----------
 function startBlackjack(){
   let bet = parseInt(document.getElementById("bj-bet").value);
   let log = document.getElementById("bj-log");
   if(isNaN(bet)||bet<=0){ log.innerHTML+="<div>Invalid bet.</div>"; return; }
   if(bet>balance){ log.innerHTML+="<div>Not enough balance.</div>"; return; }
   balance-=bet; updateBalance();
-  let player = Math.floor(Math.random()*11)+15;
-  let dealer = Math.floor(Math.random()*6)+16;
-  let result="";
-  if(player>21){ result=`Bust! Lost -${bet}`; }
-  else if(dealer>21 || player>dealer){ 
-    let win=bet*2; balance+=win; updateBalance();
-    result=`You win! Player:${player} Dealer:${dealer} +${win}`;
-  } else if(player===dealer){ 
-    balance+=bet; updateBalance();
-    result=`Push. Player:${player} Dealer:${dealer} (no loss)`;
-  } else {
-    result=`You lost. Player:${player} Dealer:${dealer} -${bet}`;
-  }
-  log.innerHTML+=`<div>${result}</div>`;
-  log.scrollTop=log.scrollHeight;
+  bjGame = { bet:bet, player:[], dealer:[], over:false };
+  bjGame.player.push(drawCard(), drawCard());
+  bjGame.dealer.push(drawCard());
+  log.innerHTML=`<div>Game started. Your hand: ${bjGame.player.join(", ")} (${handValue(bjGame.player)})</div>`;
+  document.getElementById("hit-btn").style.display="inline-block";
+  document.getElementById("stand-btn").style.display="inline-block";
 }
+function hit(){
+  if(!bjGame||bjGame.over) return;
+  bjGame.player.push(drawCard());
+  let log=document.getElementById("bj-log");
+  log.innerHTML+=`<div>You drew ${bjGame.player.at(-1)}. Hand: ${bjGame.player.join(", ")} (${handValue(bjGame.player)})</div>`;
+  if(handValue(bjGame.player)>21){
+    log.innerHTML+=`<div>Bust! Lost -${bjGame.bet}</div>`;
+    endBlackjack();
+  }
+}
+function stand(){
+  if(!bjGame||bjGame.over) return;
+  let log=document.getElementById("bj-log");
+  bjGame.dealer.push(drawCard(), drawCard());
+  while(handValue(bjGame.dealer)<17){
+    bjGame.dealer.push(drawCard());
+  }
+  let playerVal=handValue(bjGame.player);
+  let dealerVal=handValue(bjGame.dealer);
+  if(dealerVal>21||playerVal>dealerVal){
+    let win=bjGame.bet*2; balance+=win; updateBalance();
+    log.innerHTML+=`<div>You win! Dealer: ${bjGame.dealer.join(", ")} (${dealerVal}) +${win}</div>`;
+  } else if(playerVal===dealerVal){
+    balance+=bjGame.bet; updateBalance();
+    log.innerHTML+=`<div>Push. Dealer: ${bjGame.dealer.join(", ")} (${dealerVal})</div>`;
+  } else {
+    log.innerHTML+=`<div>You lost. Dealer: ${bjGame.dealer.join(", ")} (${dealerVal}) -${bjGame.bet}</div>`;
+  }
+  endBlackjack();
+}
+function endBlackjack(){
+  bjGame.over=true;
+  document.getElementById("hit-btn").style.display="none";
+  document.getElementById("stand-btn").style.display="none";
+}
+function drawCard(){ return Math.floor(Math.random()*11)+1; }
+function handValue(cards){ return cards.reduce((a,b)=>a+b,0); }
 
-// ------------------- Rewards -------------------
+// ---------- Rewards ----------
 function claimReward(type){
   let log=document.getElementById("reward-log");
   let now=Date.now();
@@ -214,14 +246,13 @@ function claimReward(type){
   log.scrollTop=log.scrollHeight;
 }
 
-// ------------------- Leaderboard -------------------
+// ---------- Leaderboard ----------
 function saveLeaderboard(){
-  // update or add player
   let found = leaderboard.find(p=>p.user===username);
   if(found){ found.balance=balance; }
   else{ leaderboard.push({user:username,balance:balance}); }
   leaderboard.sort((a,b)=>b.balance-a.balance);
-  leaderboard=leaderboard.slice(0,10); // keep top 10
+  leaderboard=leaderboard.slice(0,10);
   localStorage.setItem("leaderboard", JSON.stringify(leaderboard));
   updateLeaderboard();
 }
@@ -234,6 +265,8 @@ function updateLeaderboard(){
   });
 }
 
+// ---------- Run ----------
+askName();
 loadData();
 </script>
 </body>
